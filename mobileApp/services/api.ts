@@ -1,3 +1,5 @@
+// mobileApp/services/api.ts
+
 import axios from 'axios';
 import { API_BASE_URL } from '@/constants/config';
 import { PostWithAuthor, User, PostType, PaginatedResponse } from '@/types';
@@ -46,6 +48,29 @@ export const postsApi = {
     } catch (error) {
       console.error('Failed to fetch posts:', error);
       throw new Error('Failed to load posts. Please check your connection.');
+    }
+  },
+
+  getPost: async (id: string): Promise<PostWithAuthor> => {
+    try {
+      // Note: The SolidStart API doesn't have a single post endpoint, 
+      // so we'll get all posts and filter by ID
+      // If you add a GET /api/posts/[id] endpoint later, update this to use it directly
+      const response = await api.get('/api/posts');
+      const posts = response.data;
+      const post = posts.find((p: PostWithAuthor) => p.id === id);
+      
+      if (!post) {
+        throw new Error('Post not found');
+      }
+      
+      return post;
+    } catch (error) {
+      console.error('Failed to fetch post:', error);
+      if (error instanceof Error && error.message === 'Post not found') {
+        throw error;
+      }
+      throw new Error('Failed to load post. Please check your connection.');
     }
   },
 
