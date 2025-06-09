@@ -142,10 +142,6 @@ interface PostWithAuthor {
    npm install
    ```
 
-3. Configure your API endpoint in `constants/config.ts`:
-   ```typescript
-   export const API_BASE_URL = 'https://your-solidstart-api.com';
-   ```
 
 ### Running the App
 
