@@ -311,27 +311,6 @@ When running on iOS/Android:
 - Clear retry actions
 - Loading states for all async operations
 
-## Testing
-
-### Manual Testing Checklist
-
-- [ ] App starts without crashes
-- [ ] Navigation between all screens works
-- [ ] Posts load and display correctly
-- [ ] Search functionality works
-- [ ] Offline mode functions properly
-- [ ] Pull-to-refresh works
-- [ ] Author profiles load correctly
-- [ ] Share functionality works on native platforms
-
-### Content Type Testing
-
-Test with different post types:
-
-- [ ] Markdown articles render properly
-- [ ] Audio posts show player interface
-- [ ] Video posts display correctly
-- [ ] GIF posts load and animate
 
 ## Deployment
 
