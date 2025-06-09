@@ -1,3 +1,5 @@
+// mobileApp/app/(tabs)/explore/post/[id].tsx
+
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -27,6 +29,7 @@ import {
 } from 'lucide-react-native';
 import { formatDateTime } from '@/utils/dateUtils';
 import { removeMarkdown } from '@/utils/formatting';
+import { postsApi } from '@/services/api';
 
 const { width } = Dimensions.get('window');
 
@@ -38,9 +41,9 @@ export default function PostDetailScreen() {
   const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
-    // In a real app, you would fetch the post by ID
-    // For demo purposes, we'll simulate this
-    fetchPost();
+    if (id) {
+      fetchPost();
+    }
   }, [id]);
 
   const fetchPost = async () => {
@@ -48,43 +51,11 @@ export default function PostDetailScreen() {
       setLoading(true);
       setError(null);
       
-      // Simulate API call - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock post data
-      const mockPost: PostWithAuthor = {
-        id: id!,
-        title: 'Sample Blog Post Title',
-        content: `# Sample Blog Post
-
-This is a sample blog post content that demonstrates how the post detail screen looks. It includes markdown formatting and various text styles.
-
-## Features
-- Rich text formatting
-- Code blocks
-- Lists and more
-
-\`\`\`javascript
-console.log('Hello, World!');
-\`\`\`
-
-This post shows how different content types are displayed in the mobile application.`,
-        contentType: 'markdown',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        author: {
-          id: '1',
-          username: 'johndoe',
-          email: 'john@example.com',
-          displayName: 'John Doe',
-          avatarUrl: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop',
-          createdAt: new Date(),
-        },
-      };
-      
-      setPost(mockPost);
+      const postData = await postsApi.getPost(id!);
+      setPost(postData);
     } catch (err) {
-      setError('Failed to load post. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load post. Please try again.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
