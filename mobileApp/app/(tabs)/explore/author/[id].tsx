@@ -1,3 +1,5 @@
+// mobileApp/app/(tabs)/explore/author/[id].tsx
+
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -18,10 +20,13 @@ import { User } from '@/types';
 import { COLORS, TYPOGRAPHY, SPACING } from '@/constants/config';
 import { ArrowLeft, User as UserIcon, AtSign, Calendar } from 'lucide-react-native';
 import { formatDate } from '@/utils/dateUtils';
+import { usersApi } from '@/services/api';
 
 export default function AuthorProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [author, setAuthor] = useState<User | null>(null);
+  const [authorLoading, setAuthorLoading] = useState(true);
+  const [authorError, setAuthorError] = useState<string | null>(null);
   
   const { posts, loading, error, refreshing, refresh, retry } = usePosts({
     authorId: id,
@@ -29,22 +34,31 @@ export default function AuthorProfileScreen() {
   });
 
   useEffect(() => {
-    // In a real app, you would fetch the author details
-    // For demo purposes, we'll use mock data
-    if (posts.length > 0) {
-      setAuthor(posts[0].author);
-    } else {
-      // Mock author data
-      setAuthor({
-        id: id!,
-        username: 'johndoe',
-        email: 'john@example.com',
-        displayName: 'John Doe',
-        avatarUrl: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=200&h=200&fit=crop',
-        createdAt: new Date('2023-01-01'),
-      });
+    if (id) {
+      fetchAuthor();
     }
-  }, [posts, id]);
+  }, [id]);
+
+  const fetchAuthor = async () => {
+    try {
+      setAuthorLoading(true);
+      setAuthorError(null);
+      
+      const authorData = await usersApi.getUser(id!);
+      setAuthor(authorData);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load author profile.';
+      setAuthorError(errorMessage);
+      
+      // If we have posts but author fetch failed, use author from first post as fallback
+      if (posts.length > 0) {
+        setAuthor(posts[0].author);
+        setAuthorError(null);
+      }
+    } finally {
+      setAuthorLoading(false);
+    }
+  };
 
   const handleBack = () => {
     router.back();
@@ -52,6 +66,20 @@ export default function AuthorProfileScreen() {
 
   const handlePostPress = (postId: string) => {
     router.push(`/(tabs)/explore/post/${postId}`);
+  };
+
+  const handleRefresh = async () => {
+    await Promise.all([
+      refresh(),
+      fetchAuthor()
+    ]);
+  };
+
+  const handleRetry = async () => {
+    await Promise.all([
+      retry(),
+      fetchAuthor()
+    ]);
   };
 
   const renderPostCard = ({ item, index }: { item: any; index: number }) => (
@@ -110,7 +138,8 @@ export default function AuthorProfileScreen() {
     );
   };
 
-  if (loading && !refreshing) {
+  // Show loading if either author or posts are loading (and not refreshing)
+  if ((authorLoading || loading) && !refreshing) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
@@ -128,7 +157,8 @@ export default function AuthorProfileScreen() {
     );
   }
 
-  if (error && posts.length === 0) {
+  // Show error if both author and posts failed to load
+  if ((authorError && !author) && (error && posts.length === 0)) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
@@ -141,7 +171,10 @@ export default function AuthorProfileScreen() {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Author</Text>
         </View>
-        <ErrorMessage message={error} onRetry={retry} />
+        <ErrorMessage 
+          message={authorError || error || 'Failed to load author profile'} 
+          onRetry={handleRetry} 
+        />
       </SafeAreaView>
     );
   }
@@ -172,16 +205,18 @@ export default function AuthorProfileScreen() {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={refresh}
+            onRefresh={handleRefresh}
             colors={[COLORS.primary]}
             tintColor={COLORS.primary}
           />
         }
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No posts found</Text>
-          </View>
+          !loading ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No posts found</Text>
+            </View>
+          ) : null
         }
       />
     </SafeAreaView>
